@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Feed Nibbles</title>
+<meta name="description" content="A learning game for little kids: feed Nibbles letters, numbers and words.">
+<meta name="theme-color" content="#9ED6EE">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Nibbles">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Grandstander:wght@700;800&display=swap">
+<style>
+/* Layout: one-screen picnic on a hill. Header tabs, Nibbles on the hilltop, snacks laid out on a gingham blanket below.
+   Single bright daytime world on purpose (a toddler game), so no dark theme. */
+:root {
+  --sky: #BFE6F6;
+  --sky-deep: #9ED6EE;
+  --grass: #84C964;
+  --grass-deep: #63AE48;
+  --ink: #2E2347;
+  --ink-soft: #6E6488;
+  --nib: #FF8B3D;
+  --nib-deep: #E86A1F;
+  --belly: #FFC995;
+  --horn: #FFD84D;
+  --cheek: #FF7FA0;
+  --mouth: #4A1C3C;
+  --tongue: #FF6F91;
+  --card: #FFFDF6;
+  --accent: #6A4BD6;
+  --gingham: rgba(222, 66, 74, .5);
+  --glow: #FFE45C;
+  --font-play: "Grandstander", "Andika", "Trebuchet MS", system-ui, sans-serif;
+  --font-read: "Andika", "Century Gothic", "Trebuchet MS", system-ui, sans-serif;
+  color-scheme: light;
+}
+html { height: 100%; box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); -webkit-text-size-adjust: 100%; }
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--sky);
+  color: var(--ink);
+  font-family: var(--font-read);
+  overflow: hidden;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; border: 0; cursor: pointer; }
+button:focus-visible, [tabindex]:focus-visible { outline: 4px solid var(--accent); outline-offset: 3px; }
+
+.sky { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden;
+  background: linear-gradient(var(--sky-deep), var(--sky) 55%); }
+.cloud { position: absolute; width: 120px; height: 40px; background: #fff; border-radius: 40px; opacity: .9; animation: drift 60s linear infinite; }
+.cloud::before, .cloud::after { content: ""; position: absolute; background: #fff; border-radius: 50%; }
+.cloud::before { width: 54px; height: 54px; left: 18px; top: -26px; }
+.cloud::after { width: 40px; height: 40px; left: 60px; top: -16px; }
+.cloud.c1 { top: 13%; left: -140px; }
+.cloud.c2 { top: 26%; left: -140px; transform: scale(.7); animation-duration: 85s; animation-delay: -40s; }
+@keyframes drift { to { translate: calc(100vw + 280px) 0; } }
+
+.app {
+  height: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 10px 0;
+}
+
+/* Header */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.modes { display: flex; gap: 8px; flex-wrap: wrap; }
+.mode {
+  font-family: var(--font-play); font-weight: 800; font-size: 20px;
+  min-height: 48px; padding: 6px 18px; border-radius: 999px;
+  background: rgba(255, 255, 255, .75); color: var(--ink);
+  box-shadow: 0 4px 0 rgba(46, 35, 71, .12);
+  transition: transform .12s;
+}
+.mode:active { transform: translateY(2px); }
+.mode[aria-selected="true"] { background: var(--accent); color: #fff; box-shadow: 0 4px 0 #4A31A8; }
+.gear { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,.75); display: grid; place-items: center; flex: none; box-shadow: 0 4px 0 rgba(46,35,71,.12); }
+.gear svg { width: 24px; height: 24px; fill: none; stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; }
+
+/* Stage */
+.stage { position: relative; z-index: 2; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 8px; }
+.stars { display: flex; gap: 6px; }
+.stars svg { width: 30px; height: 30px; fill: rgba(255,255,255,.7); stroke: rgba(46,35,71,.25); stroke-width: 1.5; transition: fill .2s; }
+.stars svg.on { fill: var(--glow); stroke: #D9A400; animation: starpop .5s; }
+@keyframes starpop { 50% { transform: scale(1.5) rotate(20deg); } }
+
+.bubble {
+  position: relative; background: var(--card); border-radius: 26px;
+  padding: 8px 24px; min-width: 120px; max-width: 100%;
+  display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap;
+  box-shadow: 0 6px 0 rgba(46,35,71,.1);
+}
+.bubble::after { content: ""; position: absolute; bottom: -12px; left: 50%; translate: -50% 0; border: 13px solid transparent; border-top-color: var(--card); border-bottom: 0; }
+.big-letter { font-weight: 700; font-size: clamp(54px, 13vw, 92px); line-height: 1; color: var(--accent); }
+.assoc { font-weight: 700; font-size: clamp(22px, 6vw, 34px); display: flex; align-items: center; gap: 8px; animation: rise .4s; }
+.assoc .emo { font-size: 1.5em; }
+.assoc b { color: var(--nib-deep); }
+.big-num { font-family: var(--font-read); font-weight: 700; font-size: clamp(54px, 13vw, 88px); line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+.frame { display: grid; gap: 6px; }
+.frame i { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--ink-soft); display: block; transition: background .15s; }
+.frame i.on { background: var(--nib); border-color: var(--nib-deep); animation: starpop .3s; }
+.word { display: flex; gap: 2px; font-weight: 700; font-size: clamp(40px, 11vw, 70px); line-height: 1.1; color: var(--accent); letter-spacing: .02em; }
+.word span { transition: color .15s, transform .15s; display: inline-block; }
+.word span.lit { color: var(--nib-deep); transform: translateY(-6px) scale(1.15); }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+
+.monster { flex: 1 1 0; min-height: 110px; max-height: 280px; width: 100%; margin-bottom: -30px; cursor: pointer; overflow: visible; }
+.monster:focus { outline: none; }
+.monster .m-eye { transform-box: fill-box; transform-origin: center; animation: blink 5s infinite; }
+@keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
+.monster .m-open { transform-box: fill-box; transform-origin: center; transform: scaleY(.1); opacity: 0; transition: transform .2s, opacity .12s; }
+.monster .m-closed { transition: opacity .12s; }
+.monster.open .m-open { transform: scaleY(1); opacity: 1; }
+.monster.open .m-closed { opacity: 0; }
+.monster.chomp .m-open { opacity: 1; animation: chomp .45s ease-in-out; }
+.monster.chomp .m-closed { opacity: 0; }
+@keyframes chomp { 0% { transform: scaleY(1); } 25% { transform: scaleY(.08); } 50% { transform: scaleY(.75); } 75% { transform: scaleY(.08); } 100% { transform: scaleY(.1); } }
+.monster.happy { animation: hop .7s; }
+@keyframes hop { 30% { transform: translateY(-26px) scale(1.04, .97); } 60% { transform: translateY(0) scale(1.06, .92); } }
+.monster .m-arm { transform-box: fill-box; }
+.monster .m-arm-l { transform-origin: 80% 20%; }
+.monster .m-arm-r { transform-origin: 20% 20%; }
+.monster.happy .m-arm-l { animation: wave-l .7s; }
+.monster.happy .m-arm-r { animation: wave-r .7s; }
+@keyframes wave-l { 50% { transform: rotate(50deg); } }
+@keyframes wave-r { 50% { transform: rotate(-50deg); } }
+.monster.no { animation: nope .5s; }
+@keyframes nope { 20% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } 80% { transform: rotate(-3deg); } }
+.monster.giggle { animation: giggle .4s; }
+@keyframes giggle { 25%, 75% { transform: scale(1.05, .95); } 50% { transform: scale(.96, 1.04); } }
+
+.floaty { position: absolute; left: 50%; bottom: 40%; translate: -50% 0; font-size: 64px; font-weight: 700; color: var(--accent); pointer-events: none; animation: floatup 1s ease-out forwards; text-shadow: 0 3px 0 #fff; z-index: 5; }
+@keyframes floatup { from { opacity: 0; transform: translateY(20px) scale(.6); } 25% { opacity: 1; transform: translateY(0) scale(1.1); } to { opacity: 0; transform: translateY(-90px) scale(1); } }
+
+/* Ground + picnic blanket */
+.ground { position: relative; z-index: 1; isolation: isolate; padding-top: 30px; padding-bottom: 16px; }
+.ground::before { content: ""; position: absolute; z-index: -1; top: 0; bottom: -300px; left: 50%; width: 170vw; translate: -50% 0;
+  background: var(--grass); border-radius: 50% 50% 0 0 / 70px 70px 0 0; box-shadow: inset 0 10px 0 var(--grass-deep); }
+.tray {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 14px;
+  padding: 18px 14px; border-radius: 24px; min-height: 130px;
+  background-color: #fff;
+  background-image: linear-gradient(90deg, var(--gingham) 50%, transparent 50%), linear-gradient(var(--gingham) 50%, transparent 50%);
+  background-size: 40px 40px;
+  box-shadow: 0 8px 0 rgba(30, 70, 20, .18);
+}
+.tray.numbers { gap: 10px; }
+
+.item { position: relative; display: grid; place-items: center; transition: transform .12s; }
+.item:active { transform: scale(.93); }
+.item.eaten { visibility: hidden; }
+.item:disabled { cursor: default; }
+.item.shake { animation: shake .45s; }
+@keyframes shake { 20% { transform: translateX(-10px) rotate(-6deg); } 40% { transform: translateX(10px) rotate(6deg); } 60% { transform: translateX(-6px); } 80% { transform: translateX(6px); } }
+.item.hint { animation: hint 1s infinite; }
+@keyframes hint { 50% { box-shadow: 0 0 0 10px var(--glow), 0 6px 0 rgba(0,0,0,.12); transform: scale(1.06); } }
+.tray .item { animation: pop-in .35s backwards; }
+.tray .item:nth-child(2) { animation-delay: .06s; } .tray .item:nth-child(3) { animation-delay: .12s; }
+.tray .item:nth-child(4) { animation-delay: .18s; } .tray .item:nth-child(n+5) { animation-delay: .24s; }
+@keyframes pop-in { from { transform: scale(.3); opacity: 0; } }
+.tray .item.shake { animation: shake .45s; }
+.tray .item.hint { animation: hint 1s infinite; }
+
+.cookie {
+  width: clamp(88px, 25vw, 128px); aspect-ratio: 1; max-width: 100%; border-radius: 50%;
+  background:
+    radial-gradient(circle at 24% 66%, #6B3B16 0 4px, transparent 5px),
+    radial-gradient(circle at 74% 30%, #6B3B16 0 4px, transparent 5px),
+    radial-gradient(circle at 70% 76%, #6B3B16 0 3px, transparent 4px),
+    radial-gradient(circle at 35% 30%, #F8D79A, #E7AE5E 65%, #CB8A42);
+  box-shadow: inset 0 -7px 0 rgba(120, 66, 18, .25), 0 6px 0 rgba(0, 0, 0, .12);
+  font-weight: 700; font-size: clamp(46px, 13vw, 70px); line-height: 1; color: #6A3812;
+  text-shadow: 0 2px 0 rgba(255, 238, 200, .7);
+}
+.plate {
+  width: clamp(54px, 15vw, 74px); aspect-ratio: 1; max-width: 100%; border-radius: 50%;
+  background: radial-gradient(circle, #fff 58%, #EDE9F7 60%, #fff 72%);
+  box-shadow: 0 5px 0 rgba(0, 0, 0, .12);
+  font-size: clamp(30px, 8.5vw, 42px); line-height: 1;
+}
+.card {
+  min-width: clamp(96px, 26vw, 150px); padding: 12px 14px; border-radius: 20px; background: var(--card);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, .12); gap: 2px;
+}
+.card .pic { font-size: clamp(34px, 9vw, 46px); line-height: 1.1; }
+.card .w { font-weight: 700; font-size: clamp(26px, 7vw, 36px); line-height: 1.1; color: var(--ink); }
+.flying { position: fixed !important; z-index: 60; pointer-events: none; animation: none !important; }
+
+/* Overlays */
+.overlay {
+  position: fixed; inset: 0; z-index: 80; display: grid; place-items: center;
+  background: rgba(46, 35, 71, .35);
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.panel {
+  background: var(--card); border-radius: 30px; padding: 28px 24px; width: min(440px, 100%);
+  display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center;
+  box-shadow: 0 10px 0 rgba(46, 35, 71, .2); max-height: 100%; overflow-y: auto;
+}
+.panel h1, .panel h2 { font-family: var(--font-play); font-weight: 800; margin: 0; line-height: 1.05; text-wrap: balance; }
+.panel h1 { font-size: clamp(40px, 11vw, 56px); color: var(--nib-deep); }
+.panel h2 { font-size: 30px; color: var(--accent); }
+.panel p { margin: 0; font-size: 18px; line-height: 1.4; max-width: 34ch; }
+.panel .small { font-size: 15px; color: var(--ink-soft); }
+.big-btn {
+  font-family: var(--font-play); font-weight: 800; font-size: 30px; min-width: 200px; min-height: 72px;
+  border-radius: 999px; background: var(--nib); color: #fff; box-shadow: 0 7px 0 var(--nib-deep);
+  padding: 8px 32px; transition: transform .1s;
+}
+.big-btn:active { transform: translateY(4px); box-shadow: 0 3px 0 var(--nib-deep); }
+.big-btn.calm { background: var(--accent); box-shadow: 0 7px 0 #4A31A8; font-size: 22px; min-height: 56px; min-width: 160px; }
+
+.setting { width: 100%; display: flex; flex-direction: column; align-items: stretch; gap: 6px; text-align: left; }
+.setting .label { font-weight: 700; font-size: 16px; letter-spacing: .02em; color: var(--ink-soft); }
+.seg { display: flex; gap: 6px; background: #EFEAF8; padding: 5px; border-radius: 16px; }
+.seg button { flex: 1; min-height: 44px; border-radius: 12px; background: transparent; font-weight: 700; font-size: 18px; }
+.seg button[aria-pressed="true"] { background: #fff; color: var(--accent); box-shadow: 0 2px 0 rgba(46,35,71,.15); }
+
+.seg-test { min-height: 48px; padding: 8px 22px; border-radius: 999px; background: #EFEAF8; color: var(--accent); font-weight: 700; font-size: 18px; }
+.confetti { position: fixed; top: -20px; width: 12px; height: 18px; border-radius: 3px; z-index: 79; pointer-events: none; animation: fall linear forwards; }
+@keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+@media (max-height: 640px) {
+  .monster { min-height: 90px; }
+  .tray { padding: 12px 10px; min-height: 100px; }
+  .cookie { width: clamp(76px, 22vw, 104px); font-size: clamp(40px, 11vw, 58px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  .cloud { animation: none; }
+}
+</style>
+</head>
+<body>
+
+
+<div class="sky" aria-hidden="true"><div class="cloud c1"></div><div class="cloud c2"></div></div>
+
+<div class="app">
+  <header class="top">
+    <nav class="modes" role="tablist" aria-label="Game">
+      <button class="mode" role="tab" data-mode="letters" id="tab-letters">ABC</button>
+      <button class="mode" role="tab" data-mode="numbers" id="tab-numbers">123</button>
+      <button class="mode" role="tab" data-mode="words" id="tab-words">Words</button>
+    </nav>
+    <button class="gear" id="openSettings" aria-label="Grown-up settings">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg>
+    </button>
+  </header>
+
+  <main class="stage" id="stage">
+    <div class="stars" id="stars" aria-label="Stars earned"></div>
+    <div class="bubble" id="bubble" aria-live="polite"><span class="big-letter">Hi!</span></div>
+    <svg id="nibbles" class="monster" viewBox="0 0 260 250" preserveAspectRatio="xMidYMax meet" role="button" tabindex="0" aria-label="Nibbles. Tap to hear the question again.">
+      <ellipse cx="130" cy="238" rx="86" ry="10" fill="rgba(30,70,20,.25)"/>
+      <path d="M80 54 Q68 14 94 28 Q98 42 100 50 Z" fill="var(--horn)"/>
+      <path d="M180 54 Q192 14 166 28 Q162 42 160 50 Z" fill="var(--horn)"/>
+      <ellipse cx="96" cy="224" rx="30" ry="15" fill="var(--nib-deep)"/>
+      <ellipse cx="164" cy="224" rx="30" ry="15" fill="var(--nib-deep)"/>
+      <g class="m-arm m-arm-l"><ellipse cx="36" cy="150" rx="16" ry="31" transform="rotate(28 36 150)" fill="var(--nib-deep)"/></g>
+      <g class="m-arm m-arm-r"><ellipse cx="224" cy="150" rx="16" ry="31" transform="rotate(-28 224 150)" fill="var(--nib-deep)"/></g>
+      <path d="M130 30 C198 30 232 80 232 136 C232 192 190 226 130 226 C70 226 28 192 28 136 C28 80 62 30 130 30 Z" fill="var(--nib)"/>
+      <ellipse cx="130" cy="172" rx="64" ry="46" fill="var(--belly)"/>
+      <g class="m-eye"><ellipse cx="98" cy="88" rx="22" ry="25" fill="#fff"/><circle cx="102" cy="95" r="11" fill="var(--ink)"/><circle cx="106" cy="90" r="3.8" fill="#fff"/></g>
+      <g class="m-eye"><ellipse cx="162" cy="88" rx="22" ry="25" fill="#fff"/><circle cx="158" cy="95" r="11" fill="var(--ink)"/><circle cx="162" cy="90" r="3.8" fill="#fff"/></g>
+      <ellipse cx="68" cy="128" rx="14" ry="8" fill="var(--cheek)" opacity=".7"/>
+      <ellipse cx="192" cy="128" rx="14" ry="8" fill="var(--cheek)" opacity=".7"/>
+      <path class="m-closed" d="M104 134 Q130 158 156 134" fill="none" stroke="var(--ink)" stroke-width="6" stroke-linecap="round"/>
+      <g class="m-open">
+        <ellipse cx="130" cy="146" rx="44" ry="31" fill="var(--mouth)"/>
+        <ellipse cx="130" cy="164" rx="25" ry="10" fill="var(--tongue)"/>
+        <rect x="107" y="116" width="13" height="13" rx="3" fill="#fff"/>
+        <rect x="140" y="116" width="13" height="13" rx="3" fill="#fff"/>
+      </g>
+      <circle id="mouthTarget" cx="130" cy="146" r="3" fill="none"/>
+    </svg>
+  </main>
+
+  <section class="ground">
+    <div class="tray" id="tray" aria-label="Snacks"></div>
+  </section>
+</div>
+
+<div class="overlay" id="startScreen">
+  <div class="panel">
+    <h1>Feed Nibbles</h1>
+    <p>Nibbles is hungry! Listen, then tap the right snack.</p>
+    <button class="big-btn" id="playBtn">Play</button>
+    <p class="small">Turn the sound up, and turn off Silent mode on an iPhone. Tap Nibbles any time to hear the question again.</p>
+  </div>
+</div>
+
+<div class="overlay" id="settingsScreen" hidden>
+  <div class="panel" role="dialog" aria-labelledby="setTitle">
+    <h2 id="setTitle">Grown-up settings</h2>
+    <div class="setting"><span class="label">Letters look like</span>
+      <div class="seg" data-setting="case">
+        <button id="s-case-upper" data-value="upper">ABC</button>
+        <button id="s-case-lower" data-value="lower">abc</button>
+        <button id="s-case-mix" data-value="mix">Both</button>
+      </div></div>
+    <div class="setting"><span class="label">Count up to</span>
+      <div class="seg" data-setting="countMax">
+        <button id="s-count-5" data-value="5">5</button>
+        <button id="s-count-10" data-value="10">10</button>
+      </div></div>
+    <div class="setting"><span class="label">Pictures on word cards</span>
+      <div class="seg" data-setting="pics">
+        <button id="s-pics-on" data-value="true">Show</button>
+        <button id="s-pics-off" data-value="false">Hide (reading only)</button>
+      </div></div>
+    <div class="setting"><span class="label">Sound and voice</span>
+      <div class="seg" data-setting="sound">
+        <button id="s-sound-on" data-value="true">On</button>
+        <button id="s-sound-off" data-value="false">Off</button>
+      </div></div>
+    <button class="seg-test" id="testSound">Test sound</button>
+    <p class="small" id="soundNote" aria-live="polite">No sound? On an iPhone, Silent mode mutes this game. Turn it off and turn the volume up.</p>
+    <button class="big-btn calm" id="closeSettings">Done</button>
+  </div>
+</div>
+
+<div class="overlay" id="doneScreen" hidden>
+  <div class="panel">
+    <h1>Yum!</h1>
+    <p>Nibbles is full. Great job!</p>
+    <button class="big-btn" id="againBtn">Play again</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+  const settings = Object.assign({ case: 'upper', countMax: 5, pics: true, sound: true }, store.get('nibbles-settings', {}));
+  let mode = store.get('nibbles-mode', 'letters');
+  if (!['letters', 'numbers', 'words'].includes(mode)) mode = 'letters';
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const LETTERS = {
+    A: ['apple', '🍎'], B: ['banana', '🍌'], C: ['carrot', '🥕'], D: ['donut', '🍩'], E: ['egg', '🥚'],
+    F: ['fish', '🐟'], G: ['grapes', '🍇'], H: ['honey', '🍯'], I: ['ice cream', '🍦'], J: ['juice', '🧃'],
+    K: ['kiwi', '🥝'], L: ['lemon', '🍋'], M: ['milk', '🥛'], N: ['noodles', '🍜'], O: ['orange', '🍊'],
+    P: ['pizza', '🍕'], Q: ['queen', '👑'], R: ['rice', '🍚'], S: ['strawberry', '🍓'], T: ['tomato', '🍅'],
+    U: ['umbrella', '☂️'], V: ['violin', '🎻'], W: ['watermelon', '🍉'], X: ['fox', '🦊'], Y: ['yam', '🍠'], Z: ['zebra', '🦓']
+  };
+  const FOODS = [
+    { e: '🍓', one: 'strawberry', many: 'strawberries' }, { e: '🍎', one: 'apple', many: 'apples' },
+    { e: '🍪', one: 'cookie', many: 'cookies' }, { e: '🫐', one: 'blueberry', many: 'blueberries' },
+    { e: '🍇', one: 'grape', many: 'grapes' }, { e: '🥕', one: 'carrot', many: 'carrots' },
+    { e: '🍌', one: 'banana', many: 'bananas' }, { e: '🧁', one: 'cupcake', many: 'cupcakes' },
+    { e: '🍩', one: 'donut', many: 'donuts' }
+  ];
+  const WORDS = [['pie', '🥧'], ['egg', '🥚'], ['nut', '🥜'], ['corn', '🌽'], ['cake', '🍰'], ['milk', '🥛'], ['pear', '🍐'],
+    ['soup', '🍲'], ['rice', '🍚'], ['taco', '🌮'], ['fish', '🐟'], ['bread', '🍞'], ['apple', '🍎'], ['cheese', '🧀']];
+  const NUM = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+  const ROUNDS = 5;
+
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const cap = s => s[0].toUpperCase() + s.slice(1);
+
+  /* ---------- Sound ---------- */
+  let ac = null;
+  function audio() {
+    if (!settings.sound) return null;
+    if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+    if (ac.state === 'suspended') ac.resume().catch(() => {});
+    return ac;
+  }
+  function tone(freq, start, dur, type = 'sine', vol = .14) {
+    const a = audio(); if (!a) return;
+    const t = a.currentTime + start, o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + .05);
+  }
+  function crunch() {
+    const a = audio(); if (!a) return;
+    for (let i = 0; i < 2; i++) {
+      const t = a.currentTime + i * .14, len = .09;
+      const buf = a.createBuffer(1, Math.floor(a.sampleRate * len), a.sampleRate), d = buf.getChannelData(0);
+      for (let j = 0; j < d.length; j++) d[j] = (Math.random() * 2 - 1) * (1 - j / d.length);
+      const src = a.createBufferSource(); src.buffer = buf;
+      const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 900 + i * 500;
+      const g = a.createGain(); g.gain.value = .6;
+      src.connect(f).connect(g).connect(a.destination); src.start(t);
+    }
+  }
+  const yay = () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .09, .28, 'triangle', .12));
+  const oops = () => { tone(392, 0, .18, 'sine', .1); tone(311, .15, .28, 'sine', .1); };
+  const blip = n => tone(440 + n * 45, 0, .12, 'triangle', .12);
+
+  let voice = null;
+  function pickVoice() {
+    try {
+      const vs = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang));
+      const pref = ['Samantha', 'Google US English', 'Aria', 'Jenny', 'Karen', 'Tessa', 'Moira', 'Zira'];
+      voice = pref.map(p => vs.find(v => v.name.includes(p))).find(Boolean) || vs.find(v => /en.US/i.test(v.lang)) || vs[0] || null;
+    } catch (e) {}
+  }
+  const canSpeak = 'speechSynthesis' in window;
+  if (canSpeak) { pickVoice(); try { speechSynthesis.addEventListener('voiceschanged', pickVoice); } catch (e) {} }
+
+  // Phones mute web sound in silent mode and need a tap to unlock it. Do all of that on the first tap.
+  let silentEl = null;
+  function silentWav() {
+    const n = 4000, buf = new Uint8Array(44 + n), dv = new DataView(buf.buffer);
+    const w = (o, s) => [...s].forEach((c, i) => buf[o + i] = c.charCodeAt(0));
+    w(0, 'RIFF'); dv.setUint32(4, 36 + n, true); w(8, 'WAVEfmt '); dv.setUint32(16, 16, true);
+    dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, 8000, true); dv.setUint32(28, 8000, true);
+    dv.setUint16(32, 1, true); dv.setUint16(34, 8, true); w(36, 'data'); dv.setUint32(40, n, true);
+    buf.fill(128, 44);
+    let s = ''; buf.forEach(b => s += String.fromCharCode(b));
+    return 'data:audio/wav;base64,' + btoa(s);
+  }
+  function unlockAudio() {
+    if (!settings.sound) return;
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+    try {
+      if (!silentEl) { silentEl = new Audio(silentWav()); silentEl.setAttribute('playsinline', ''); }
+      const p = silentEl.play(); if (p && p.catch) p.catch(() => {});
+    } catch (e) {}
+    audio();
+    if (canSpeak) { try { speechSynthesis.resume(); } catch (e) {} }
+  }
+
+  function say(text, opts = {}) {
+    return new Promise(res => {
+      const est = Math.min(3000, 400 + text.length * 60);
+      if (!settings.sound || !canSpeak) { setTimeout(res, est); return; }
+      try {
+        const u = new SpeechSynthesisUtterance(text);
+        if (voice) { u.voice = voice; u.lang = voice.lang; } else u.lang = 'en-US';
+        u.rate = opts.rate || .88; u.pitch = 1.2; u.volume = 1;
+        let done = false; const fin = () => { if (!done) { done = true; res(); } };
+        u.onend = fin; u.onerror = fin; if (opts.onstart) u.onstart = opts.onstart;
+        setTimeout(fin, 2000 + text.length * 120);
+        const go = () => { try { speechSynthesis.resume(); speechSynthesis.speak(u); } catch (e) { fin(); } };
+        // Speaking right after cancel() gets dropped on some phones, so leave a short gap.
+        if (speechSynthesis.speaking || speechSynthesis.pending) { speechSynthesis.cancel(); setTimeout(go, 80); }
+        else go();
+      } catch (e) { setTimeout(res, est); }
+    });
+  }
+  document.addEventListener('visibilitychange', () => { if (document.hidden && canSpeak) try { speechSynthesis.cancel(); } catch (e) {} });
+
+  /* ---------- Nibbles ---------- */
+  const mon = $('#nibbles'), bubble = $('#bubble'), tray = $('#tray'), stage = $('#stage');
+  const mouth = open => mon.classList.toggle('open', open);
+  function anim(cls, ms) { mon.classList.remove(cls); mon.getBoundingClientRect(); mon.classList.add(cls); setTimeout(() => mon.classList.remove(cls), ms); }
+  function chomp() { mon.classList.remove('chomp'); mon.getBoundingClientRect(); mon.classList.add('chomp'); crunch(); setTimeout(() => mon.classList.remove('chomp'), 460); }
+  function floaty(text) { const d = document.createElement('div'); d.className = 'floaty'; d.textContent = text; stage.appendChild(d); setTimeout(() => d.remove(), 1100); }
+
+  function fly(el) {
+    return new Promise(res => {
+      const r = el.getBoundingClientRect(), t = $('#mouthTarget').getBoundingClientRect();
+      const c = el.cloneNode(true);
+      c.classList.remove('hint', 'shake'); c.classList.add('flying'); c.removeAttribute('id'); c.setAttribute('aria-hidden', 'true');
+      Object.assign(c.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', margin: '0' });
+      document.body.appendChild(c); el.classList.add('eaten');
+      const dx = t.left + t.width / 2 - (r.left + r.width / 2), dy = t.top + t.height / 2 - (r.top + r.height / 2);
+      const done = () => { c.remove(); res(); };
+      try {
+        const a = c.animate([
+          { transform: 'translate(0,0) scale(1) rotate(0deg)' },
+          { transform: `translate(${dx * .5}px, ${dy * .5 - 80}px) scale(.85) rotate(-14deg)`, offset: .5 },
+          { transform: `translate(${dx}px, ${dy}px) scale(.2) rotate(12deg)`, opacity: .5 }
+        ], { duration: reduce ? 150 : 600, easing: 'ease-in' });
+        a.onfinish = done;
+      } catch (e) { done(); }
+    });
+  }
+
+  /* ---------- Game flow ---------- */
+  let gen = 0, stars = 0, busy = false, current = null, started = false;
+  let lastLetter = '', lastNum = 0, lastWord = '';
+
+  function renderStars(popLast) {
+    const star = '<path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z"/>';
+    $('#stars').innerHTML = Array.from({ length: ROUNDS }, (_, i) =>
+      `<svg viewBox="0 0 24 24" class="${i < stars ? 'on' : ''}" style="${i < stars && !(popLast && i === stars - 1) ? 'animation:none' : ''}">${star}</svg>`).join('');
+    $('#stars').setAttribute('aria-label', `${stars} of ${ROUNDS} stars`);
+  }
+  function renderTabs() {
+    document.querySelectorAll('.mode').forEach(b => b.setAttribute('aria-selected', String(b.dataset.mode === mode)));
+  }
+  function setMode(m) {
+    mode = m; store.set('nibbles-mode', m); renderTabs();
+    stars = 0; renderStars(); startRound();
+  }
+  function startRound() {
+    gen++; busy = false; mouth(false);
+    ({ letters: roundLetters, numbers: roundNumbers, words: roundWords })[mode](gen);
+  }
+  function makeItem(cls, html, label, onTap) {
+    const b = document.createElement('button');
+    b.className = 'item ' + cls; b.innerHTML = html; b.setAttribute('aria-label', label);
+    b.addEventListener('click', () => onTap(b));
+    tray.appendChild(b); return b;
+  }
+  function lockTray() { tray.querySelectorAll('.item').forEach(x => { x.disabled = true; x.classList.remove('hint'); }); }
+  async function wrong(b, text) {
+    b.classList.remove('shake'); b.getBoundingClientRect(); b.classList.add('shake');
+    setTimeout(() => b.classList.remove('shake'), 460);
+    oops(); anim('no', 520);
+    current.wrong++;
+    if (current.wrong >= 2 && current.right) current.right.classList.add('hint');
+    say(text);
+  }
+  async function win(g, speech) {
+    mouth(false); anim('happy', 720); yay();
+    await say(speech);
+    if (g !== gen) return;
+    stars++; renderStars(true);
+    await wait(650);
+    if (g !== gen) return;
+    if (stars >= ROUNDS) celebrate(); else startRound();
+  }
+
+  // Letters: feed the cookie with the right letter
+  function roundLetters(g) {
+    const keys = Object.keys(LETTERS);
+    let target; do { target = pick(keys); } while (target === lastLetter);
+    lastLetter = target;
+    const others = shuffle(keys.filter(k => k !== target)).slice(0, 2);
+    const lower = settings.case === 'lower' || (settings.case === 'mix' && Math.random() < .5);
+    const show = k => lower ? k.toLowerCase() : k;
+    current = { target, wrong: 0, right: null, show, prompt: `Feed me the letter ${target}!` };
+    bubble.innerHTML = `<span class="big-letter">${show(target)}</span>`;
+    tray.className = 'tray letters'; tray.innerHTML = '';
+    shuffle([target, ...others]).forEach(k => {
+      const b = makeItem('cookie', show(k), `Cookie with the letter ${k}`, el => tapLetter(el, k, g));
+      if (k === target) current.right = b;
+    });
+    mouth(true);
+    say(current.prompt);
+  }
+  async function tapLetter(b, k, g) {
+    if (busy || g !== gen) return;
+    if (k !== current.target) return wrong(b, `That's ${k}. Can you find ${current.target}?`);
+    busy = true; lockTray();
+    await fly(b); if (g !== gen) return;
+    chomp(); await wait(420); if (g !== gen) return;
+    const [word, emo] = LETTERS[k];
+    const s = current.show(k);
+    const marked = k === 'X' ? 'fo<b>x</b>' : `<b>${word[0]}</b>${word.slice(1)}`;
+    bubble.innerHTML = `<span class="big-letter">${s}</span><span class="assoc"><span class="emo">${emo}</span>${marked}</span>`;
+    win(g, k === 'X' ? 'Yum! X! You can hear X at the end of fox!' : `Yum! ${k}! ${k} is for ${word}!`);
+  }
+
+  // Numbers: feed exactly N snacks, counting out loud
+  function roundNumbers(g) {
+    const max = Number(settings.countMax) || 5;
+    let n; do { n = 1 + Math.floor(Math.random() * max); } while (n === lastNum && max > 1);
+    lastNum = n;
+    const food = pick(FOODS);
+    const total = Math.min(n + (n <= 3 ? 2 : 3), 12);
+    current = { n, fed: 0, food, wrong: 0, right: null, prompt: `Feed me ${NUM[n]} ${n === 1 ? food.one : food.many}!` };
+    const cols = Math.min(n, 5);
+    bubble.innerHTML = `<span class="big-num">${n}</span><span class="frame" id="frame" style="grid-template-columns:repeat(${cols}, 22px)">${'<i></i>'.repeat(n)}</span>`;
+    tray.className = 'tray numbers'; tray.innerHTML = '';
+    for (let i = 0; i < total; i++) makeItem('plate', food.e, `A ${food.one}`, el => tapCount(el, g));
+    mouth(true);
+    say(current.prompt);
+  }
+  async function tapCount(b, g) {
+    if (busy || g !== gen || current.fed >= current.n) return;
+    const k = ++current.fed;
+    b.disabled = true;
+    const dot = document.querySelectorAll('#frame i')[k - 1]; if (dot) dot.classList.add('on');
+    blip(k); floaty(String(k));
+    say(cap(NUM[k]) + '!', { rate: 1 });
+    const last = k === current.n;
+    if (last) { busy = true; lockTray(); }
+    await fly(b); if (g !== gen) return;
+    chomp();
+    if (!last) return;
+    await wait(600); if (g !== gen) return;
+    const f = current.food;
+    win(g, `${cap(NUM[current.n])} ${current.n === 1 ? f.one : f.many}! Yum yum, thank you!`);
+  }
+
+  // Words: feed the card that matches the word
+  function roundWords(g) {
+    let t; do { t = pick(WORDS); } while (t[0] === lastWord);
+    lastWord = t[0];
+    const used = new Set([t[0][0]]); const others = [];
+    for (const w of shuffle(WORDS)) { if (others.length === 2) break; if (!used.has(w[0][0])) { used.add(w[0][0]); others.push(w); } }
+    current = { target: t[0], wrong: 0, right: null, prompt: `Feed me the ${t[0]}!` };
+    bubble.innerHTML = `<span class="word" id="word">${[...t[0]].map(c => `<span>${c}</span>`).join('')}</span>`;
+    tray.className = 'tray words'; tray.innerHTML = '';
+    shuffle([t, ...others]).forEach(([w, e]) => {
+      const html = `${settings.pics ? `<span class="pic">${e}</span>` : ''}<span class="w">${w}</span>`;
+      const b = makeItem('card', html, `The word ${w}`, el => tapWord(el, w, g));
+      if (w === t[0]) current.right = b;
+    });
+    mouth(true);
+    say(current.prompt);
+  }
+  async function tapWord(b, w, g) {
+    if (busy || g !== gen) return;
+    if (w !== current.target) return wrong(b, `That says ${w}. Can you find ${current.target}?`);
+    busy = true; lockTray();
+    await fly(b); if (g !== gen) return;
+    chomp(); await wait(420); if (g !== gen) return;
+    mouth(false); anim('happy', 720); yay();
+    const spans = document.querySelectorAll('#word span');
+    await say('Yum!');
+    for (let i = 0; i < spans.length; i++) {
+      if (g !== gen) return;
+      spans.forEach(s => s.classList.remove('lit')); spans[i].classList.add('lit');
+      await say(spans[i].textContent.toUpperCase() + '.', { rate: .95 });
+    }
+    if (g !== gen) return;
+    spans.forEach(s => s.classList.add('lit'));
+    win(g, `${w}! You read ${w}!`);
+  }
+
+  function celebrate() {
+    gen++; mouth(false); anim('happy', 720); yay();
+    $('#doneScreen').hidden = false;
+    const colors = ['#FF8B3D', '#6A4BD6', '#FFE45C', '#84C964', '#FF7FA0', '#5BC0EB'];
+    if (!reduce) for (let i = 0; i < 40; i++) {
+      const c = document.createElement('span'); c.className = 'confetti';
+      c.style.left = Math.random() * 100 + 'vw'; c.style.background = pick(colors);
+      c.style.animationDuration = (2 + Math.random() * 2) + 's'; c.style.animationDelay = (Math.random() * .8) + 's';
+      document.body.appendChild(c); setTimeout(() => c.remove(), 5000);
+    }
+    say('You did it! Nibbles is full. Thank you!');
+  }
+
+  /* ---------- Controls ---------- */
+  document.addEventListener('pointerdown', () => { if (started) unlockAudio(); }, true);
+  $('#testSound').addEventListener('click', () => {
+    unlockAudio();
+    const note = $('#soundNote');
+    if (!settings.sound) { note.textContent = 'Sound is turned off above. Tap On first.'; return; }
+    note.textContent = 'Playing a chime and saying hello…';
+    yay();
+    let heard = false;
+    if (!canSpeak) { note.textContent = 'You should hear a chime. This device has no talking voice, so the words will show on screen only.'; return; }
+    say('Hi! Can you hear me?', { onstart: () => { heard = true; } });
+    setTimeout(() => {
+      note.textContent = heard
+        ? 'Sound is working.'
+        : 'The voice did not start. On an iPhone, turn off Silent mode and turn the volume up, then try again.';
+    }, 2500);
+  });
+  document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => { unlockAudio(); setMode(b.dataset.mode); }));
+  mon.addEventListener('click', () => { if (current && !busy && started) { anim('giggle', 420); say(current.prompt); } });
+  mon.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); mon.dispatchEvent(new Event('click')); } });
+
+  $('#playBtn').addEventListener('click', () => { unlockAudio(); started = true; $('#startScreen').hidden = true; renderStars(); startRound(); });
+  $('#againBtn').addEventListener('click', () => {
+    unlockAudio(); $('#doneScreen').hidden = true; document.querySelectorAll('.confetti').forEach(c => c.remove());
+    stars = 0; renderStars(); startRound();
+  });
+
+  function renderSettings() {
+    document.querySelectorAll('.seg').forEach(seg => {
+      const key = seg.dataset.setting;
+      seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(String(settings[key]) === b.dataset.value)));
+    });
+  }
+  document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+    const key = b.parentElement.dataset.setting; const v = b.dataset.value;
+    settings[key] = v === 'true' ? true : v === 'false' ? false : (key === 'countMax' ? Number(v) : v);
+    store.set('nibbles-settings', settings); renderSettings();
+    if (key === 'sound' && !settings.sound && canSpeak) try { speechSynthesis.cancel(); } catch (e) {}
+    settingsChanged = true;
+  }));
+  let settingsChanged = false;
+  $('#openSettings').addEventListener('click', () => { settingsChanged = false; renderSettings(); $('#settingsScreen').hidden = false; });
+  $('#closeSettings').addEventListener('click', () => {
+    $('#settingsScreen').hidden = true; unlockAudio();
+    if (settingsChanged && started && $('#doneScreen').hidden) startRound();
+  });
+
+  // Opening frame: a sample round behind the Play card, so the game is visible at rest
+  renderTabs(); renderStars();
+  bubble.innerHTML = '<span class="big-letter">B</span>';
+  tray.className = 'tray letters';
+  tray.innerHTML = ['D', 'B', 'M'].map(k => `<div class="item cookie" aria-hidden="true">${k}</div>`).join('');
+  mouth(true);
+})();
+</script>
+
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
+  }
+</script>
+
+</body>
+</html>
